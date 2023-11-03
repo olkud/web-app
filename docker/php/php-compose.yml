@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  php:
+    build: .
+    restart: always
+
+  cron:
+    build: .
+    command: cron && tail -f /var/log/cron.log
+
+  composer:
+    build: .
+    command: composer install
+
+  php_queue:
+    build: .
+    command: php artisan doctrine:queue:work --queue=default
+
+  php_queue_mail:
+    build: .
+    command: php artisan doctrine:queue:work --queue=mail
+
+  php_queue_sms:
+    build: .
+    command: php artisan doctrine:queue:work --queue=sms

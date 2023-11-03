@@ -1,0 +1,74 @@
+version: '3'
+services:
+  nginx:
+    extends:
+      file: ./docker/nginx/nginx-compose.yml
+      service: nginx
+    restart: on-failure
+    depends_on:
+      - fpm
+    links:
+      - fpm:php
+    volumes:
+      - ./:/app
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+  postgresdb:
+    image: postgres
+    container_name: postgress
+    hostname: postgresdb
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=root
+    volumes:
+      - go-app-volume:/var/lib/postgresql/data
+    networks:
+      - app-network
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: rabbitmq
+    hostname: "rabbit"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    labels:
+      NAME: "rabbitmq"
+    volumes:
+      - rabbitmq-config:/etc/rabbitmq/rabbitmq.config
+    networks:
+      - app-network
+  fpm:
+    extends:
+      file: ./docker/php/php-compose.yml
+      service: php
+    restart: on-failure
+    depends_on:
+      - postgresdb
+      - redis
+    volumes:
+      - ./:/app
+    networks:
+      - app-network
+
+volumes:
+  go-app-volume:
+    driver: local
+  rabbitmq-config:
+  nfsmount:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
+
+networks:
+  app-network:
